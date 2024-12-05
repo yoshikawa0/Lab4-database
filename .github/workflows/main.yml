@@ -1,0 +1,28 @@
+name: Test Database
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up PostgreSQL
+      uses: harmon758/postgresql-action@v2.0.0
+      with:
+        postgresql version: '14'
+        postgresql db: 'testdb'
+
+    - name: Execute SQL script
+      run: |
+        psql -U postgres -d testdb -f setup_database.sql
+
+    - name: Run SELECT query
+      run: |
+        echo "SELECT * FROM employee WHERE manager_id IS NULL;" | psql -U postgres -d testdb
