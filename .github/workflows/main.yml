@@ -9,20 +9,38 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up PostgreSQL
-      uses: harmon758/postgresql-action@v2.0.0
-      with:
-        postgresql version: '14'
-        postgresql db: 'testdb'
+    - name: Wait for PostgreSQL to start
+      run: |
+        sleep 10
+
+    - name: Install PostgreSQL client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
 
     - name: Execute SQL script
       run: |
-        psql -U postgres -d testdb -f setup_database.sql
+        PGPASSWORD=postgres psql -h localhost -U postgres -d testdb -f setup_database.sql
 
     - name: Run SELECT query
       run: |
-        echo "SELECT * FROM employee WHERE manager_id IS NULL;" | psql -U postgres -d testdb
+        echo "SELECT * FROM employee WHERE manager_id IS NULL;" | PGPASSWORD=postgres psql -h localhost -U postgres -d testdb
